@@ -1,0 +1,187 @@
+---
+title: "Home Work 3"
+author: "Daniel Lupercio"
+date: "4/13/2021"
+output:
+  pdf_document:
+    extra_dependencies: ["amsmath"]
+  html_document: default
+---
+
+```{r setup, include=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(tinytex.verbose = TRUE)
+library(tidyverse)
+library(kableExtra)
+library(dummies)
+library(float)
+```
+
+## 8.21 In a regression analysis of on-the-job head injuries of warehouse laborers caused by falling objects, $Y$ is a measure of severity of the injury, $X_1$ is an index reflecting both the weight of the object and the distance it fell, and $X_2$ and $X_3$ are indicator variables for nature of head protection worn at the time of the accident, coded as follows:
+
+```{r, include=FALSE}
+table_821 <- data.frame("Type_of_Protection" = c("Hard hat", "Bump cap", "None"),
+                        "X2" = c(1,0,0),
+                        "X3" = c(0,1,0))
+
+#kbl(table_821, col.names = T) %>%
+#  kable_styling(full_width = F) %>% 
+#  column_spec(1, bold = T, color = "Black") %>%
+#  column_spec(2, bold = T, color = "Black") %>%
+#  column_spec(3, bold = T, color = "Black")
+```
+
+```{r, echo=FALSE}
+table_821 %>% kbl() %>% kable_styling(latex_options = "hold_position") %>% kable_paper(full_width = F)
+```
+
+### The response function to be used in the study is E{Y} = $\beta_0 + \beta_1X_1 + \beta_2X_2 + \beta_3X_3$
+
+### a. Develop the response function for each type of protection category
+
+#### When $X_2 = 1$ and $X_3 = 0$
+$$
+\begin{aligned}
+E[Y] &= \beta_0 + \beta_1X_1 + \beta_2(1)\\
+E[Y] &= (\beta_0 + \beta_2) + \beta_1X_1 
+\end{aligned}
+$$
+
+#### When $X_3 = 1$ and $X_2 = 0$
+$$
+\begin{split}
+E[Y] = \beta_0 + \beta_1X_1 + \beta_3(1)\\
+E[Y] = (\beta_0 + \beta_3) + \beta_1X_1
+\end{split}
+$$
+
+#### When $X_2 = 0$ and $X_3 = 0$
+$$
+E[Y] = \beta_0 + \beta_1X_1
+$$
+
+### b. For each of the following questions, specify the alternatives $H_0$ and $H_a$ for the appropriate test: 
+
+#### (I) With $X_1$ fixed, does wearing a bump cap reduce the expected severity of injury as compared with wearing no protection?
+
+We state that $H_0:$ Wearing a bump cap reduces the expected severity of injury ($\beta_3 \geq 0$). Compared to $H_a:$ Wearing no protection reduces the expected severity of injury ($\beta_3 < 0$).
+
+#### (II) With $X_1$ fixed, is the expected severity of injury the same when wearing a hard hat as when wearing a bump cap?
+
+We state that $H_0:$ The expected severity of injury when wearing a hard hat is the same as when wearing a bump cap ($\beta_2=\beta_3$). Compared to $H_a:$ The expected severity of injury when wearing a hard hat is not the same as when wearing a bump cap ($\beta_2\neq\beta_3$).
+
+## 8.39 Refer to the CDI data set in Appendix C.2. The number of active physicians (Y) is to be regressed against total population $(X_1)$, total personal income $(X_2)$, and geographic region ($X_3$,$X_4$,$X_5$). 
+
+```{r}
+CDI <- read.csv("/Users/daniel421/Desktop/STAT707/CDI_data2.csv", header = TRUE)
+```
+
+### a. Fit a first-order regression model. Let $X_3$ = 1 if NE and 0 otherwise, $X_4$ = 1 if NC and 0 otherwise, and $X_5$ = 1 if S and 0 otherwise
+
+```{r}
+CDI$X3 <-ifelse(CDI$geographic_region == 1, 1,0)
+CDI$X4 <- ifelse(CDI$geographic_region == 2, 1,0)
+CDI$X5 <- ifelse(CDI$geographic_region == 3, 1,0)
+```
+
+
+```{r}
+CDI_fit <- lm(num_physicians ~ total_pop + total_income + X3 + X4 + X5, data = CDI);
+summary(CDI_fit)
+```
+
+$$
+\hat{Y} = -207.5 -0.000515X_1 + 0.107X_2+149X_3+145.5X_4+191.2X_5
+$$
+
+### b. Examine whether the effect for the northeastern region on number of active physicians differs from the effect for the north central region by constructing an appropriate 90 percent confidence interval. Interpret your interval estimate.
+
+
+The t-value at $\alpha= 0.10$ and $Df=434$:
+
+```{r}
+qt(0.95,434)
+```
+
+$$
+\begin{split}
+t(1-\alpha/2;n-p) = \\t(1-0.10/2,440-6)=\\t(0.95,434)=\\1.648372
+\end{split}
+$$
+
+The Standard error for X3 = 86.83, while the standard error for X4 = 85.15
+
+$s({b3-b4}) = 86.83-85.15 = 1.68$
+
+So our 90% Confidence Interval is represented by:
+
+$$
+\begin{split}
+\hat{Y} \pm t(1-\alpha/2;n-p)*s(\hat{Y})\\
+3.5 \pm (1.648372)*1.68  
+\end{split}
+$$
+
+```{r}
+3.5 + ((1.648372)*1.68)
+3.5 - ((1.648372)*1.68)
+```
+
+We state with 90% confidence the number of active physicians in the NC region differs from the NE region is (0.731, 6.269).
+
+### c. Test whether any geographic effects are present; use $\alpha$ = 0.10. State the alternatives, decision rule and conclusion. What is the P-value of the test?
+
+$$
+\begin{split}
+H_0: \beta_3= \beta_4 = \beta_5 = 0\\
+H_a: not \ all \ \beta_3, \beta_4, \beta_5 = 0
+\end{split}
+$$
+
+```{r}
+CDI_fit_2 <- lm(num_physicians ~ total_pop + total_income, data = CDI);
+summary(CDI_fit_2)
+anova(CDI_fit_2)
+```
+
+$$
+F^{*} = \frac{SSE(R)-SSE(F)}{df_R-df_F}\div\frac{SSE(F)}{df_F}
+$$
+
+It is worth noting that $SSR = (X3,X4,X5|X1,X2) = 140967081-139093455.$
+
+$$
+F^{*} = \frac{140967081-139093455}{437-434}\div\frac{139093455}{434}
+$$
+
+```{r, echo=FALSE,results="hide"}
+(140967081-139093455)/(3)
+139093455/434
+624542/320491.8
+```
+
+$$
+F^* = 1.9487
+$$
+
+$$
+\begin{split}
+F^{*} \leq F(1-\alpha,df_R-df_F,df_F), \ concude \ H_0\\
+F^{*} > F(1-\alpha,df_R-df_F,df_F), \ concude \ H_A
+\end{split}
+$$
+
+```{r, echo=FALSE, results='hide'}
+qf(1-.10, 3, 436)
+```
+
+$$
+F(0.90,3,434) = 2.096
+$$
+
+### Our F-statistic, $F^*$ is $\leq$ to $F(0.90,3,434)$. Thus, we fail to reject the null hypothesis and conclude that $\beta_3= \beta_4 = \beta_5 = 0$. With a p-value of 0.121
+
+```{r, echo=FALSE, reults = 'hide'}
+anova(CDI_fit,CDI_fit_2)[2,6]
+```
+
