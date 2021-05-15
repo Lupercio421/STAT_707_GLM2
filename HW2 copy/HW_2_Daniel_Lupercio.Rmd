@@ -1,0 +1,467 @@
+---
+title: "Homework 2"
+author: "Daniel Lupercio"
+date: "3/16/2021"
+output: html_document
+---
+
+```{r}
+CDI <- read.csv("CDI_data2.csv", header = TRUE)
+```
+
+## 7.37 The CDI data set is used for predicting the number of active physicians (Y) in a county, it has been decided to include total population $(X_1)$ and total personal income $(X_2)$ as predictor variables. The question now is whether an additional predictor variable would be helpful in the model and, if so, which variable would be most helpful. Assume that a first-order multiple regression model is appropriate. 
+
+### a. For each of the following variables, calculate the coefficient of partial determination given that $X_1$ and $X_2$ are included in the model: land area $(X_3)$, percent of population 65 or older $(X_4)$, number of hospital beds $(X_5)$, and total serious crimes $(X_6)$.
+
+```{r, message = FALSE}
+library(ppcor)
+```
+
+```{r}
+#X1 - "total_pop"
+#X2 - "total_income"
+#X3 - "land_area"
+#X4 - "percent_pop_65"
+#X5 - "n_hos_beds"
+#X6 - "total_crimes"
+#Y - "num_physicians
+```
+
+#### $(I)$ land area
+
+$$
+R^2_{Y3|12} = \frac{SSR(X_3|X_1,X_2)}{SSE(X_1,X_2)}=\frac{SSE(X_1,X_2)-SSE(X_1,X_2,X_3)}{SSE(X_1,X_2)}
+$$
+
+```{r}
+I_full_model <- lm(num_physicians ~ total_pop + total_income + land_area, data = CDI)
+reduced_model <-lm(num_physicians ~ total_pop + total_income, data = CDI)
+anova(I_full_model)
+anova(reduced_model)
+```
+
+```{r}
+I_SSR <- (140967081)-(136903711) #we are looking for the SSR value of Y regressed on all 3 predictor variables
+#I_SSR = SSE(X1,X2) - SSE(X1,X2,X3)
+reduced_model_SSE <- (140967081)  #SSE(X1,X2) = SSTO - SSR(X1,X2) 
+
+I_R_square <- I_SSR/reduced_model_SSE; I_R_square
+```
+
+
+$R^2_{Y3|12} = 0.0288$
+
+#### $(II)$ percent of population 65 or older 
+
+$$
+R^2_{Y4|12} = \frac{SSR(X_4|X_1,X_2)}{SSE(X_1,X_2)}= \frac{SSE(X_1,X_2)-SSE(X_1,X_2,X_4)}{SSE(X_1,X_2)}
+$$
+
+```{r}
+II_full_model <- lm(num_physicians~ total_pop+total_income+percent_pop_65, data = CDI)
+anova(II_full_model)
+```
+
+```{r}
+II_SSR <- reduced_model_SSE-140425434
+II_R_square <- II_SSR/reduced_model_SSE; II_R_square
+```
+
+$R^2_{Y4|12} = 0.0038$
+
+#### $(III)$ number of hospital beds
+
+$$
+R^2_{Y5|12} = \frac{SSR(X_5|X_1,X_2)}{SSE(X_1,X_2)} = \frac{SSE(X_1,X_2)-SSE(X_1,X_2,X_5)}{SSE(X_1,X_2)}
+$$
+
+```{r}
+III_full_model <- lm(num_physicians ~ total_pop+total_income+n_hos_beds, data = CDI)
+anova(III_full_model)
+```
+
+
+```{r}
+III_SSR <- reduced_model_SSE-62896949
+III_R_square <- III_SSR/reduced_model_SSE; III_R_square
+```
+
+$R^2_{Y5|12} = 0.553$
+
+#### $(IV)$ total_crimes
+
+$$
+R^2_{Y6|12} = \frac{SSR(X_6|X_1,X_2)}{SSE(X_1,X_2)} = \frac{SSE(X_1,X_2)-SSE(X_1,X_2,X_6)}{SSE(X_1,X_2)}
+$$
+
+```{r}
+IV_full_model <- lm(num_physicians ~ total_pop+total_income+total_crimes, data = CDI)
+anova(IV_full_model)
+```
+
+```{r}
+IV_SSR <- reduced_model_SSE-139934722
+IV_R_square <- IV_SSR/reduced_model_SSE; IV_R_square
+```
+
+$R^2_{Y6|12} = 0.0073$
+
+### b. On the basis of the results in part (a), which of the four additional predictor variables is best? Is the extra sum of squares associated with this variable larger than those for the other three variables? 
+
+$X_5$, the number of hospital beds will be considered the best. Yes, at 78070132, this is the highest SSR (extra sum of squares) of all predictor variables.
+
+### c.Using the F* test statistic, test whether or not the variable determined to be best in part (b) is helpful in the regression model when $X_1$ and $X_2$ are included in the model; use $\alpha$ = .01.
+
+```{r}
+#F(1-.01,(437-436), 437) -> F(1-.01,1,437)
+qf(1-.01,1,437) #This is our F-value
+```
+
+We will test if $H_0$ : Models do not significantly differ ($\beta_5=0$). $H_A$: Full model (with $X_5$) is significantly better ($\beta_5\neq0$). 
+
+```{r}
+(140967081)-(62896949)/(437-436);
+(62896949)/(436);
+78070132/144259.1 
+```
+
+At  $\alpha =$  0.01, and an F* value of 541.1799, we reject the $H_0$ and conclude $H_A$. We state that the full model, with $X_1,X_2 \ and \ X_5$ is significantly better. Here F* $>$ F. The F* test statistics for the other three potential predictor variables will be not be as large as the one here. The partial determination values are not as high as for $X_5$, this would also mean that their SSR values would not be high as well.
+
+## 7.5 Refer to Patient satisfaction from Problem 6.15
+
+### a. Obtain the analysis of variance table that decomposes the regression sum of squares into extra sums of squares associated with $X_2$; with $X_1$, given $X_2$; and with $X_3$ given $X_2$ and $X_1$
+
+```{r}
+PI <- read.csv("Patient_Satisfaction.csv", header = TRUE)
+```
+
+```{r}
+#patient satisfaction - Y
+# patient's age (in years) - X1
+# severity of illness (an index) - X2
+# anxiety level (an index) - X3
+```
+
+
+
+```{r, echo=FALSE, results=FALSE}
+#### Y regressed onto $X_2$
+I_PI_model <- lm(patient_satisfaction~illness_severity, data = PI);
+summary(I_PI_model)
+anova(I_PI_model)
+#anova(I_PI_model)[1,2]
+```
+
+```{r, echo = FALSE, results=FALSE}
+#Y regressed on $X_1$ alone.
+summary(lm(patient_satisfaction~patient_age, data = PI))
+anova(lm(patient_satisfaction~patient_age, data = PI))
+```
+
+
+```{r, results=FALSE, echo = FALSE}
+#Y regressed on X_1 + X_2
+II_PI_model <- lm(patient_satisfaction~patient_age + illness_severity, data = PI);
+summary(II_PI_model)
+anova(II_PI_model)
+```
+
+
+
+The way the anova table will be printed out, according to this exercise, is to add $X_2$ first. Followed by $X_1$, then $X_3$
+
+```{r}
+#Y regressed onto $X_3$|$X_1$,$X_2$
+full_PI_model <- lm(patient_satisfaction~illness_severity + patient_age + anxiety_level, data = PI);
+#summary(full_PI_model);
+anova(full_PI_model)
+```
+
+ANOVA table decomposition
+
+```{r}
+full_PI_model.aov <- anova(full_PI_model)
+tab <- as.table(cbind(
+  'SS' = c("SSR(X1,X2,X3)" = sum(full_PI_model.aov[1:3, 2]),
+         "SSR(X2)"           = full_PI_model.aov[1,2],
+         "SSR(X1|X2)"        = full_PI_model.aov[2, 2],
+         "SSR(X3|X1,X2)"    = full_PI_model.aov[3, 2],
+         "SSE"               = full_PI_model.aov[4, 2],
+         "Total"             = sum(full_PI_model.aov[, 2])),
+
+  'Df' = c(                    sum(full_PI_model.aov[1:3, 1]),
+                               full_PI_model.aov[1, 1],
+                               full_PI_model.aov[2, 1],
+                               full_PI_model.aov[3, 1],
+                               full_PI_model.aov[4, 1],
+                               sum(full_PI_model.aov$Df)),
+
+  'MS' = c(                    sum(full_PI_model.aov[1:3, 2]) / sum(full_PI_model.aov[1:3, 1]),
+                               full_PI_model.aov[1, 3],
+                               full_PI_model.aov[2, 3],
+                               full_PI_model.aov[3, 3],
+                               full_PI_model.aov[4, 3],
+                               NA)
+))
+
+round(tab, 2)
+```
+
+### b. Test whether $X_3$ can be dropped from the regression model given that $X_1$ and $X_2$ are retained. Use the F* test statistic and level of significance 0.025. State the alternatives, decision rule, and conclusion. What is the P-value of the test? 
+
+$$
+F^{*} = \frac{SSE(R)-SSE(F)}{df_R-df_F}\div\frac{SSE(F)}{df_F}
+$$
+
+```{r, results=FALSE, echo=FALSE}
+(4613-4248.84)/(1)
+(4248.84)/(42)
+364.16/101.1629
+```
+
+$$
+F^{*} = \frac{4613-4248.84}{43-42}\div\frac{4248.84}{42}
+$$
+
+$$
+F^{*} = \frac{364.16}{101.1629} = 3.599739
+$$
+```{r}
+anova(II_PI_model, full_PI_model)
+```
+
+```{r}
+qf(1-.025,1,42) #Our F-value
+```
+
+
+We state that our $H_0$ : Models do not significantly differ ($\beta_3=0$). $H_A$: Full model (with $X_3$) is significantly better ($\beta_3\neq0$).
+
+$$
+F^{*} \leq F(1-\alpha,df_R-df_F,df_F), \ concude \ H_0\\
+F^{*} > F(1-\alpha,df_R-df_F,df_F), \ concude \ H_A
+$$
+
+Our $F^{*}$ = 3.599739 is less than F = 5.403859. The p-value of the F test is equal to 0.06468. Thus
+
+$$
+F^{*} \leq F(1-.025,1,42), \ concude \ H_0
+$$
+
+## 7.14 Refer to Patient satisfaction Problem 6.15
+
+### a. Calcluate $R^2_{Y1}$, $R^2_{Y1|2}$, $R^2_{Y1|23}$. How is the degree of marginal linear association between Y and $X_1$ affected, when adjusted for $X_2$? When adjusted for both $X_2$ and $X_3$
+
+#### (I) $R^2_{Y1}$
+
+We will just look at the Multiple R-Squared value
+
+```{r}
+summary(lm(patient_satisfaction~patient_age, data = PI));
+```
+
+$R^2_{Y1}$ = 0.619
+
+#### (II) $R^2_{Y1|2}$
+
+$$
+R^2_{Y1|2} = \frac{SSR(X_1|X_2)}{SSE(X_2)} = \frac{SSE(X_2)-SSE(X_1,X_2)}{SSE(X_2)}
+$$
+
+```{r}
+II_14_full_model <- lm(patient_satisfaction~illness_severity+patient_age, data = PI);
+anova(II_14_full_model)
+anova(I_PI_model); #This is Y regressed on X2 alone
+```
+
+```{r}
+((8509.0)-(4613.0))/(8509.0)
+```
+
+$R^2_{Y1|2}$ = 0.4579
+
+#### (III) $R^2_{Y1|23}$
+
+$$
+R^2_{Y1|23} = \frac{SSR(X_1|X_2,X_3)}{SSE(X_2,X_3)} = \frac{SSE(X_2,X_3)-SSE(X_1,X_2,X_3)}{SSE(X_2,X_3)}
+$$
+
+
+```{r}
+anova(full_PI_model) #Y regressed onto X1, X2, X3 
+III_14_reduced_model <- lm(patient_satisfaction~illness_severity+anxiety_level, data = PI); #Y regressed onto X2 and X3
+anova(III_14_reduced_model)
+```
+
+```{r}
+(7106.4-4248.8)/(7106.4)
+```
+
+$R^2_{Y1|23}$ = 0.4021
+
+The degree of marginal linear association between Y and X1 decreases by 0.16, when adjusted for X2. And it also decreases by 0.216 when adjusted for both X2 and X3.
+
+### b. Make similar analysis to that in part (a) for the degree of marginal linear association between Y and X_2. Are your findings similar to those in part (a) for Y and X_1?
+
+#### (I) $R^2_{Y2}$
+
+```{r}
+summary(I_PI_model)
+```
+
+$R^2_{Y2}$ = 0.3635
+
+#### (I) $R^2_{Y2|1}$
+
+$$
+R^2_{Y2|1} = \frac{SSR(X_2|X_1)}{SSE(X_2)} = \frac{SSE(X_1)-SSE(X_1,X_2)}{SSE(X_1)}
+$$
+
+```{r}
+anova(lm(patient_satisfaction~patient_age, data = PI)) #Y regressed onto X1, # SSE = 5093.9 
+anova(II_14_full_model) #SSE(X1,X2) = 4613
+```
+
+```{r}
+(5093.9-4613)/(5093.9)
+```
+
+$R^2_{Y2|1}$ = 0.0944
+
+#### (III) $R^2_{Y1|23}$
+
+$$
+R^2_{Y2|13} = \frac{SSR(X_2|X_1,X_3)}{SSE(X_1,X_3)} = \frac{SSE(X_1,X_3)-SSE(X_1,X_2,X_3)}{SSE(X_1,X_3)}
+$$
+
+```{r}
+IV_14_reduced_model <- lm(patient_satisfaction ~ patient_age + anxiety_level, data = PI);
+anova(IV_14_reduced_model)[3,2]  #SSE(X1,X3)
+anova(full_PI_model)[4,2] #SSE(X1,X2,X3)
+```
+
+
+```{r}
+(4330.5-4248.841)/(4248.841)
+```
+
+$R^2_{Y1|23}$ = 0.0192
+
+The degree of marginal linear association between $Y$ and $X_2$ decreases by 0.2691 when adjusted for $X_1$. This value decreases even more, by about 0.344, when adjusted for both $X_1$ and $X_3$.
+
+## 8.6 $\textbf{Steroid level}$. An endocrinologist was interested in exploring the relationship between the level of a steroid $(Y)$ and age $(X)$ in healthy female subjects whose ages ranged from 8 to 25 years. She collected a sample of 27 healthy females in this age range.
+
+```{r, message = FALSE, error=FALSE}
+library(tidyverse)
+```
+
+
+```{r}
+steroid <- read.table("steroid_level_data.txt", col.names = c("steroid_level","age"));
+steroid$age_centered <- steroid$age - mean(steroid$age);
+steroid$age_centered_square <- (steroid$age_centered)^2
+```
+
+### a. Fit regression model (8.2). Plot the fitted regression function and the data. Does the quadratic regression function appear to be a good fit here? Find $R^2$.
+
+$$Y = \beta_0+\beta_1x_i+\beta_{11}x_i^2+ \varepsilon_i$$
+
+```{r}
+model1 <- lm(steroid_level~age_centered+age_centered_square, data = steroid);
+steroid <- bind_cols(steroid, as.data.frame(predict.lm(model1, interval = "confidence"))) %>% rename(conf_low = lwr, conf_high=upr)
+```
+
+$$\hat{Y} = 21.0942  + 1.1374x -0.1184x^2$$
+
+```{r}
+ggplot(steroid, aes(x=age, y=steroid_level)) +
+  geom_point() +
+  geom_line(aes(y = fit, color = "fitted line")) +
+  geom_ribbon(aes(ymin= conf_low, ymax = conf_high, fill = "confidence"), alpha = 0.3)
+```
+
+The data plotted with the quadratic function given from the model, appears to fit the data well
+
+### b. Test whether or not there is a regression relation; use $\alpha$ = .01. State the alternatives, decision rule, and conclusion. What is the P-value of the test?
+
+
+$$
+H_0 : \beta_1=\beta_{11}=0\\
+H_A : \beta_1 \ , \ \beta_{11}  \neq 0
+$$
+
+```{r}
+summary(model1)
+```
+
+Using the summary of our model, we see that our F* statistic is equal to 52.63
+
+```{r}
+qf(1-.01,2,24) #This is our F-value
+```
+
+$52.63 > 5.61$ implies that $F^* > F(1-.01,2,24)$. Therefore, we conclude the $H_A$, that not all $\beta_k$ for $k = [1,11]$ equal 0.   
+
+### d. Predict the steroid levels of females aged 15 using a 99% prediction interval. Interpret your interval.
+
+
+```{r}
+steroid15 <- data.frame(age_centered = (15), age_centered_square = 225);
+```
+
+```{r}
+21.0942 + 1.1374*(15) -0.1184*(15)^2
+```
+
+We should have a range of values that includes 11.5152.
+
+```{r}
+predict.lm(model1, newdata = steroid15, interval = "prediction", level = 0.99) 
+```
+
+#### On average, we state with 95% confidence, that a female aged 15 will have steroid levels within [-4.007,27.036]
+
+### e. Test whether the quadratic term can be dropped from the model; use $\alpha$ = .01. State the alternatives, decision rule, and conclusion.
+
+$$
+F^{*} = \frac{SSE(R)-SSE(F)}{df_R-df_F}\div\frac{SSE(F)}{df_F}
+$$
+
+Model without the quadratic term (reduced model)
+
+```{r}
+model2 <- lm(steroid_level~age_centered, data = steroid);
+```
+
+
+$$
+F^{*} = \frac{491.53-238.54}{25-24}\div\frac{238.54}{24}
+$$
+
+```{r}
+(491.53-238.54)/(1) #numerator
+(238.54/24) #denominator
+252.99/9.939167
+```
+
+Our F-statistic, $F^* = 25.45$ 
+
+$$
+H_0 : \beta_{11} = 0 \\
+H_A : \beta_{11} \neq 0
+$$
+
+```{r}
+qf(.99, 1,24)
+```
+
+Our F-value, for $\alpha = .01$ is equal to 7.82.
+
+$$
+F^* > F(1-\alpha,df_R-df_F, df_f) \\
+25.45 > 7.82
+$$
+
+#### Thus, we conlclude $H_A$. The model with $\beta_{11}$ is significantly better.
+
+
