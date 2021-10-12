@@ -2,7 +2,9 @@
 title: "STAT 707 Homework 1"
 author: "Daniel Lupercio"
 date: "3/1/2021"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r, message = FALSE, error=FALSE}
@@ -149,7 +151,7 @@ The estimated variance, $s^2(\hat{Y}_h)$ $\approx 5.409$.
 You have been asked to evaluate two alternative models for predicting the number of active physicians $(Y)$ in a CDI. Proposed model I includes as predictor variables total population $(X_1)$, land area $(X_2)$, and total personal income $(X_3)$. Proposed model II includes as predictor variables population density ($X_1$, the total population divided by land area), percent of population greater than 65 years old $(X_2)$, and total personal income $(X_3)$ 
 
 ```{r}
-CD1 <- read.csv("CDI_Data.csv", header = FALSE)
+CD1 <- read.csv("/Users/daniel421/Desktop/R/STAT707/STAT_707_GLM2/CDI_Data.csv", header = FALSE)
 ```
 
 
